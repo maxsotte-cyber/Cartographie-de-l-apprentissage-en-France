@@ -43,6 +43,10 @@
   .case { display: flex; align-items: center; gap: 6px; font-size: 13.5px; cursor: pointer; }
   .case input { accent-color: var(--vj-fonce); }
   .boutons { display: flex; gap: 8px; margin: 4px 0 8px; }
+  .barre-filtres { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .barre-filtres span { font-size: 13px; font-weight: 700; color: var(--texte); }
+  .barre-filtres button { padding: 5px 10px; font-size: 12.5px; color: var(--rv); border-color: var(--rv); }
+  .barre-filtres button:hover { background: var(--rv-clair); }
   button { font: inherit; font-size: 13px; padding: 7px 12px; border-radius: 6px; cursor: pointer; border: 1px solid var(--bord); background: #fff; color: var(--texte); }
   button:hover { border-color: var(--vj); }
   button.principal { background: var(--rv); border-color: var(--rv); color: #fff; }
@@ -101,6 +105,10 @@
     </header>
 
     <div id="filtres">
+      <div class="barre-filtres">
+        <span>Filtres</span>
+        <button id="b-reinit">↺ Réinitialiser</button>
+      </div>
       <div class="bloc">
         <label for="f-formation">Formation ou code RNCP</label>
         <input id="f-formation" type="search" list="dl-formations" placeholder="ex. BTS assurance, cuisinier, RNCP38635" autocomplete="off">
@@ -158,7 +166,6 @@
         <label class="case"><input type="checkbox" id="f-qualite"> Organismes certifiés qualité (Qualiopi) uniquement</label>
       </div>
       <div class="boutons">
-        <button id="b-reinit">Réinitialiser</button>
         <button id="b-export" class="principal">Exporter en CSV</button>
       </div>
     </div>
@@ -269,7 +276,9 @@ const majLibelles = () => carte.getZoom() >= 8 ? libelles.addTo(carte) : libelle
 carte.on("zoomend", majLibelles); majLibelles();
 const rendu = L.canvas({padding: 0.5});
 const STYLE = {radius: 5, weight: 1, color: "#4b5c09", fillColor: "#9dbe1a", fillOpacity: 0.85, renderer: rendu};
-const STYLE_SEL = {radius: 9, weight: 2, color: "#ffffff", fillColor: "#a1205f", fillOpacity: 1};
+// Le point sélectionné et le cercle de rayon partagent le canevas des points : un second canevas
+// se poserait par-dessus et bloquerait le survol et le clic sur tous les autres points.
+const STYLE_SEL = {radius: 9, weight: 2, color: "#ffffff", fillColor: "#a1205f", fillOpacity: 1, renderer: rendu, interactive: false};
 const couche = L.layerGroup().addTo(carte);
 const marqueurs = P.map((p, i) => {
   const m = L.circleMarker([p[9], p[10]], STYLE);
@@ -338,7 +347,7 @@ function filtrer(recadrer = true) {
   couche.clearLayers();
   visibles.forEach(v => couche.addLayer(marqueurs[v[0]]));
   if (cercle) { carte.removeLayer(cercle); cercle = null; }
-  if (commune) cercle = L.circle([commune[3], commune[4]], {radius: rayon * 1000, color: "#a1205f", weight: 1.5, fillOpacity: 0.04, dashArray: "4 4", interactive: false}).addTo(carte);
+  if (commune) cercle = L.circle([commune[3], commune[4]], {radius: rayon * 1000, color: "#a1205f", weight: 1.5, fillOpacity: 0.04, dashArray: "4 4", interactive: false, renderer: rendu}).addTo(carte);
 
   const nbF = visibles.reduce((s, v) => s + v[1], 0);
   $("compteur").innerHTML = `<b>${nf(visibles.length)}</b> lieu${visibles.length > 1 ? "x" : ""} de formation · <b>${nf(nbF)}</b> formation${nbF > 1 ? "s" : ""}`;
